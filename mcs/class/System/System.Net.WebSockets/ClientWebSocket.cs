@@ -113,52 +113,63 @@ namespace System.Net.WebSockets
 			}
 		}
 
-		public async Task ConnectAsync (Uri uri, CancellationToken cancellationToken)
-		{
-			state = WebSocketState.Connecting;
-			var httpUri = new UriBuilder (uri);
-			if (uri.Scheme == "wss")
-				httpUri.Scheme = "https";
-			else
-				httpUri.Scheme = "http";
-			req = (HttpWebRequest)WebRequest.Create (httpUri.Uri);
-			req.ReuseConnection = true;
-			if (options.Cookies != null)
-				req.CookieContainer = options.Cookies;
+		public async Task ConnectAsync(Uri uri, CancellationToken cancellationToken)
+        {
+            state = WebSocketState.Connecting;
+            var httpUri = new UriBuilder(uri);
+            if (uri.Scheme == "wss")
+                httpUri.Scheme = "https";
+            else
+                httpUri.Scheme = "http";
+            req = (HttpWebRequest)WebRequest.Create(httpUri.Uri);
+            req.ReuseConnection = true;
+            if (options.Cookies != null)
+                req.CookieContainer = options.Cookies;
 
-			if (options.CustomRequestHeaders.Count > 0) {
-				foreach (var header in options.CustomRequestHeaders)
-					req.Headers[header.Key] = header.Value;
-			}
+            if (options.CustomRequestHeaders.Count > 0)
+            {
+                foreach (var header in options.CustomRequestHeaders)
+                    req.Headers[header.Key] = header.Value;
+            }
 
-			var secKey = Convert.ToBase64String (Encoding.ASCII.GetBytes (Guid.NewGuid ().ToString ().Substring (0, 16)));
-			string expectedAccept = Convert.ToBase64String (SHA1.Create ().ComputeHash (Encoding.ASCII.GetBytes (secKey + Magic)));
+            var secKey = Convert.ToBase64String(Encoding.ASCII.GetBytes(Guid.NewGuid().ToString().Substring(0, 16)));
+            string expectedAccept = Convert.ToBase64String(SHA1.Create().ComputeHash(Encoding.ASCII.GetBytes(secKey + Magic)));
 
-			req.Headers["Upgrade"] = "WebSocket";
-			req.Headers["Sec-WebSocket-Version"] = VersionTag;
-			req.Headers["Sec-WebSocket-Key"] = secKey;
-			req.Headers["Sec-WebSocket-Origin"] = uri.Host;
-			if (options.SubProtocols.Count > 0)
-				req.Headers["Sec-WebSocket-Protocol"] = string.Join (",", options.SubProtocols);
+            req.Headers["Upgrade"] = "WebSocket";
+            req.Headers["Sec-WebSocket-Version"] = VersionTag;
+            req.Headers["Sec-WebSocket-Key"] = secKey;
+            req.Headers["Sec-WebSocket-Origin"] = uri.Host;
+            if (options.SubProtocols.Count > 0)
+                req.Headers["Sec-WebSocket-Protocol"] = string.Join(",", options.SubProtocols);
 
-			if (options.Credentials != null)
-				req.Credentials = options.Credentials;
-			if (options.ClientCertificates != null)
-				req.ClientCertificates = options.ClientCertificates;
-			if (options.Proxy != null)
-				req.Proxy = options.Proxy;
-			req.UseDefaultCredentials = options.UseDefaultCredentials;
-			req.Connection = "Upgrade";
+            if (options.Credentials != null)
+                req.Credentials = options.Credentials;
+            if (options.ClientCertificates != null)
+                req.ClientCertificates = options.ClientCertificates;
+            if (options.Proxy != null)
+                req.Proxy = options.Proxy;
+            req.UseDefaultCredentials = options.UseDefaultCredentials;
+            req.Connection = "Upgrade";
 
-			HttpWebResponse resp = null;
-			try {
-				resp = (HttpWebResponse)(await req.GetResponseAsync ().ConfigureAwait (false));
-			} catch (Exception e) {
-				throw new WebSocketException (WebSocketError.Success, e);
-			}
+            HttpWebResponse resp = null;
+            try
+            {
+                resp = (HttpWebResponse)(await req.GetResponseAsync().ConfigureAwait(false));
+            }
+            catch (Exception e)
+            {
+                throw new WebSocketException(WebSocketError.Success, e);
+            }
 
-			connection = req.StoredConnection;
-			underlyingSocket = connection.socket;
+            connection = req.StoredConnection;
+            underlyingSocket = connection.socket;
+
+            // ADIADI:: debugging to remove later:
+            foreach (var i in resp.Headers.AllKeys)
+            {
+                Console.WriteLine("ADIADI::{0}={1}", i.ToString(), resp.Headers[i].ToString());
+            }
+
 
 			if (resp.StatusCode != HttpStatusCode.SwitchingProtocols)
 				throw new WebSocketException ("The server returned status code '" + (int)resp.StatusCode + "' when status code '101' was expected");

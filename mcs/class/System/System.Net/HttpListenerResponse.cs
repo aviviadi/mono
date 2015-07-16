@@ -291,8 +291,16 @@ namespace System.Net {
 		{
 			if (disposed)
 				return;
-
-			Close (true);
+            
+            try
+            {
+    			Close (true);
+            }
+            catch (System.IO.IOException ex)
+            {                
+                // ADIADI::TODO.. mono trace of some kind?.  write failure can occur if trying to abort already close socket by the client
+		Console.WriteLine("ADIADI::Exception in HttpListenerResponse.cs after Close(true)");
+            }
 		}
 
 		public void AddHeader (string name, string value)
@@ -551,6 +559,35 @@ namespace System.Net {
 
 			cookies.Add (cookie);
 		}
+
+            [Flags]
+        public enum HTTP_FLAGS : uint {
+                NONE                                = 0x00000000,
+                HTTP_RECEIVE_REQUEST_FLAG_COPY_BODY = 0x00000001,
+                HTTP_RECEIVE_SECURE_CHANNEL_TOKEN   = 0x00000001,
+                HTTP_SEND_RESPONSE_FLAG_DISCONNECT  = 0x00000001,
+                HTTP_SEND_RESPONSE_FLAG_MORE_DATA   = 0x00000002,
+                HTTP_SEND_RESPONSE_FLAG_BUFFER_DATA = 0x00000004,
+                HTTP_SEND_RESPONSE_FLAG_RAW_HEADER  = 0x00000004,
+                HTTP_SEND_REQUEST_FLAG_MORE_DATA    = 0x00000001,
+                HTTP_PROPERTY_FLAG_PRESENT          = 0x00000001,
+                HTTP_INITIALIZE_SERVER              = 0x00000001,
+                HTTP_INITIALIZE_CBT                 = 0x00000004,
+                HTTP_SEND_RESPONSE_FLAG_OPAQUE      = 0x00000040,
+            }
+
+        internal uint SendHeaders(HTTP_FLAGS flags, bool isWebSocketHandshake)
+        {
+            if (StatusCode == (int)HttpStatusCode.Unauthorized) // 401
+            {
+                // HttpListenerContext.SetAuthenticationHeaders();
+            }
+
+            return 42;
+        }
+
+
+
 	}
 }
 #endif

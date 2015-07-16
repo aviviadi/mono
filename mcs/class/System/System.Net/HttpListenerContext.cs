@@ -1,4 +1,4 @@
-//
+///
 // System.Net.HttpListenerContext
 //
 // Author:
@@ -137,21 +137,37 @@ namespace System.Net {
 			} 
 		}
 
+// ADIADI::from referencesource :
 		public Task<HttpListenerWebSocketContext> AcceptWebSocketAsync (string subProtocol)
 		{
-			throw new NotImplementedException ();
+            return this.AcceptWebSocketAsync(subProtocol,
+                                             WebSocketHelpers.DefaultReceiveBufferSize,
+                                             WebSocket.DefaultKeepAliveInterval);
 		}
 
 		public Task<HttpListenerWebSocketContext> AcceptWebSocketAsync (string subProtocol, int receiveBufferSize, TimeSpan keepAliveInterval)
 		{
-			throw new NotImplementedException ();
+            WebSocketHelpers.ValidateOptions(subProtocol, receiveBufferSize, 16 /*WebSocketBuffer.MinSendBufferSize*/, keepAliveInterval);
+
+
+            var internalBuffer = new ArraySegment<byte>(new byte[4096]); // ADIADI::do I want it to be calculate ? Microsoft has its defaults..
+
+            return this.AcceptWebSocketAsync(subProtocol,
+                                             receiveBufferSize,
+                                             keepAliveInterval,
+                                             internalBuffer);
 		}
 
 		public Task<HttpListenerWebSocketContext> AcceptWebSocketAsync (string subProtocol, int receiveBufferSize, TimeSpan keepAliveInterval, ArraySegment<byte> internalBuffer)
 		{
-			throw new NotImplementedException ();
-		}
-	}
+Task<HttpListenerWebSocketContext> aa =  WebSocketHelpers.AcceptWebSocketAsync(this,
+                                                         subProtocol,
+                                                         receiveBufferSize,
+                                                         keepAliveInterval,
+                                                         internalBuffer);
+                                      return aa;
+        }
+    }
 }
 #endif
 

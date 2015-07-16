@@ -40,6 +40,13 @@ namespace System.Net.WebSockets
 {
 	public class HttpListenerWebSocketContext : WebSocketContext
 	{
+        // ADIADI::
+        public HttpListenerWebSocketContext(HttpListenerContext context,
+                                            ServerWebSocket webSocket)
+        {
+            
+        }
+
 		[MonoTODO]
 		public override CookieCollection CookieCollection {
 			get {

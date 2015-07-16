@@ -177,9 +177,10 @@ namespace System.Net {
 			if (colon >= 0)
 				host = host.Substring (0, colon);
 
-			string base_uri = String.Format ("{0}://{1}:{2}",
-								(IsSecureConnection) ? "https" : "http",
-								host, LocalEndPoint.Port);
+            string base_uri = String.Format("{0}://{1}:{2}",
+                (IsSecureConnection) ? (IsWebSocketRequest ? "wss" : "https") : (IsWebSocketRequest ? "ws" : "http"),
+                host, LocalEndPoint.Port);
+			
 
 			if (!Uri.TryCreate (base_uri + path, UriKind.Absolute, out url)){
 				context.ErrorMessage = "Invalid url: " + base_uri + path;
@@ -524,12 +525,57 @@ namespace System.Net {
 			}
 		}
 		
-		[MonoTODO]
-		public bool IsWebSocketRequest {
-			get {
-				return false;
-			}
-		}
+        // ADIADI::
+        private bool _websocketRequestWasSet;
+        private bool _websocketRequest;
+
+        private bool ContainsUpgradeWebSocketHeaders(WebHeaderCollection webHeaderCollection)
+        {
+            string[] allHeaders = webHeaderCollection.AllKeys;
+            bool foundUpgradeWebSocket = false;
+            bool foundConnectionUpgrade = false;
+            foreach (string s in allHeaders)
+            {
+                if ( !foundUpgradeWebSocket &&
+                     s.CompareTo("Upgrade") == 0 && 
+                    webHeaderCollection.Get(s).
+                        IndexOf("WebSocket", StringComparison.OrdinalIgnoreCase) >=0 )
+                        {
+                            foundUpgradeWebSocket = true;
+                            continue;
+                        }
+                if ( !foundConnectionUpgrade &&
+                            s.CompareTo("Connection") == 0 && 
+                    webHeaderCollection.Get(s).
+                        IndexOf("Upgrade", StringComparison.OrdinalIgnoreCase) >= 0 )
+                            foundConnectionUpgrade = true;
+            }
+            return foundConnectionUpgrade && foundConnectionUpgrade;
+        }
+            
+            
+        /// <summary>
+        /// Gets a value indicating whether the request is a WebSocket connection request.
+        /// </summary>
+        /// <value>
+        /// <c>true</c> if the request is a WebSocket connection request; otherwise, <c>false</c>.
+        /// </value>
+        public bool IsWebSocketRequest
+        {
+            get
+            {
+                if (!_websocketRequestWasSet)
+                {
+                    _websocketRequest = method == "GET" &&
+                        version > HttpVersion.Version10 &&
+                        ContainsUpgradeWebSocketHeaders(headers);
+
+                    _websocketRequestWasSet = true;
+                }
+
+                return _websocketRequest;
+            }
+        }
 
 		public Task<X509Certificate2> GetClientCertificateAsync ()
 		{

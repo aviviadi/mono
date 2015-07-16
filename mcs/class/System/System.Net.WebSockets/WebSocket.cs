@@ -47,10 +47,18 @@ namespace System.Net.WebSockets
 		public abstract WebSocketState State { get; }
 		public abstract string SubProtocol { get; }
 
-		[MonoTODO]
-		public static TimeSpan DefaultKeepAliveInterval {
-			get {
-				throw new NotImplementedException ();
+        private static TimeSpan? defaultKeepAliveInterval;
+
+        //ADIADI::
+		public static TimeSpan DefaultKeepAliveInterval
+        {
+            get
+            {
+                if (defaultKeepAliveInterval == null)
+                {
+                    defaultKeepAliveInterval = Timeout.InfiniteTimeSpan;
+                }
+                return defaultKeepAliveInterval.Value;            
 			}
 		}
 
